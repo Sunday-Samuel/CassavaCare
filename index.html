@@ -517,7 +517,8 @@
 
     async function start() {
       try {
-        model = await tmImage.load(MODEL_URL, METADATA_URL);
+        const base = new URL("./", window.location.href).href;
+        model = await tmImage.load(base + MODEL_URL, base + METADATA_URL);
         const res = await fetch(DISEASE_URL);
         if (!res.ok) throw new Error("disease_info.json not found");
         info = await res.json();
