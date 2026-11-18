@@ -1,0 +1,47 @@
+{
+  "CBB": {
+    "name": "Cassava Bacterial Blight",
+    "cause": "A bacterium called Xanthomonas axonopodis pv. manihotis.",
+    "spread": "Rain splash, infected cuttings, and contaminated farm tools.",
+    "symptoms": "Angular brown spots on leaves, wilting, and dieback of shoots. Gum may ooze from stems.",
+    "management": "Remove and destroy infected plants. Do not take cuttings from diseased plants. Clean tools between plants.",
+    "prevention": "Plant certified disease-free cuttings. Choose tolerant varieties if available.",
+    "see_extension_officer": "If many plants show spots or wilting, contact your local agricultural extension officer."
+  },
+  "CBSD": {
+    "name": "Cassava Brown Streak Disease",
+    "cause": "Cassava brown streak viruses.",
+    "spread": "Whiteflies and infected cuttings.",
+    "symptoms": "Yellow patches on leaves, brown streaks on stems, and brown, rotten patches inside the roots.",
+    "management": "There is no cure for the virus. Remove infected plants early. Do not use their cuttings.",
+    "prevention": "Plant certified disease-free cuttings. Control whiteflies. Choose tolerant varieties if available.",
+    "see_extension_officer": "Contact an extension officer as soon as you see stem streaks, because the roots can be damaged even when leaves look mostly healthy."
+  },
+  "CGM": {
+    "name": "Cassava Green Mottle",
+    "cause": "Cassava green mottle virus.",
+    "spread": "Beetles and infected cuttings.",
+    "symptoms": "Green and yellow mottled patterns on leaves and sometimes leaf distortion.",
+    "management": "There is no cure for the virus. Remove infected plants. Do not use their cuttings.",
+    "prevention": "Plant certified disease-free cuttings. Keep fields free of weeds that can host the virus.",
+    "see_extension_officer": "Contact an extension officer if the mottling spreads across your field."
+  },
+  "CMD": {
+    "name": "Cassava Mosaic Disease",
+    "cause": "Cassava mosaic viruses.",
+    "spread": "Whiteflies and infected cuttings.",
+    "symptoms": "Yellow and green mosaic patterns on leaves, distorted leaves, and stunted plants.",
+    "management": "There is no cure for the virus. Remove infected plants. Do not use their cuttings.",
+    "prevention": "Plant certified disease-free cuttings. Control whiteflies. Choose tolerant varieties, which are the most effective protection.",
+    "see_extension_officer": "Contact an extension officer if many plants show mosaic symptoms."
+  },
+  "Healthy": {
+    "name": "Healthy Cassava Leaf",
+    "cause": "No disease detected.",
+    "spread": "Not applicable.",
+    "symptoms": "Leaves show even green colour with no spots, mottling, or distortion.",
+    "management": "Keep monitoring your plants regularly.",
+    "prevention": "Use clean, certified cuttings. Remove weeds and inspect plants often.",
+    "see_extension_officer": "Contact an extension officer if you notice any new symptoms."
+  }
+}

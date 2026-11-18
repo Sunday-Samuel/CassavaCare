@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2e7d32">
+  <title>CassavaCare AI</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+  <style>
+    :root {
+      --brand: #2e7d32;
+      --brand-dark: #1b5e20;
+      --brand-soft: #e8f5e9;
+      --ok: #2e7d32;
+      --ok-soft: #e8f5e9;
+      --warn: #8a4b00;
+      --warn-soft: #fff4e0;
+      --danger: #b3261e;
+      --danger-soft: #fdecea;
+      --text: #1d2a1e;
+      --muted: #5f6f60;
+      --line: #e3ebe3;
+      --surface: #ffffff;
+      --bg: #f4f8f4;
+      --radius: 18px;
+      --shadow: 0 1px 2px rgba(16, 40, 20, 0.06), 0 8px 24px rgba(16, 40, 20, 0.08);
+      --focus: 0 0 0 3px rgba(46, 125, 50, 0.45);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --brand: #7bc67e;
+        --brand-dark: #a5d6a7;
+        --brand-soft: #16301a;
+        --ok: #7bc67e;
+        --ok-soft: #16301a;
+        --warn: #ffcc80;
+        --warn-soft: #3a2a10;
+        --danger: #f2a7a2;
+        --danger-soft: #3b1716;
+        --text: #e7efe7;
+        --muted: #9fb3a0;
+        --line: #263a28;
+        --surface: #17211a;
+        --bg: #0e1510;
+        --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        --focus: 0 0 0 3px rgba(123, 198, 126, 0.5);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 400px at 50% -200px, var(--brand-soft), transparent),
+        var(--bg);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 32px);
+    }
+
+    /* Header */
+    header { text-align: center; padding: 8px 0 20px; }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #43a047, var(--brand-dark));
+      color: #fff;
+      font-size: 30px;
+      box-shadow: 0 8px 20px rgba(46, 125, 50, 0.35);
+      margin-bottom: 12px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 750;
+      letter-spacing: -0.2px;
+      color: var(--text);
+    }
+    .tagline { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 14px;
+    }
+    .chip {
+      font-size: 13px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    /* Status */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #f0a500;
+      box-shadow: 0 0 0 4px rgba(240, 165, 0, 0.15);
+    }
+    .dot.ready { background: var(--ok); box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.15); }
+    .dot.error { background: var(--danger); box-shadow: 0 0 0 4px rgba(179, 38, 30, 0.15); }
+
+    /* Buttons */
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 84px;
+      padding: 14px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-weight: 650;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    .btn .icon { font-size: 26px; }
+    .btn small { font-weight: 400; color: var(--muted); font-size: 12px; }
+    .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .btn.primary small { color: rgba(255, 255, 255, 0.85); }
+    .btn:hover { border-color: var(--brand); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn:focus-visible, .link-btn:focus-visible, summary:focus-visible, .retry:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    /* Tips */
+    details.tips {
+      margin-top: 14px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    details.tips summary {
+      cursor: pointer;
+      color: var(--brand);
+      font-weight: 600;
+      list-style: none;
+    }
+    details.tips summary::-webkit-details-marker { display: none; }
+    details.tips ul { margin: 8px 0 0; padding-left: 18px; line-height: 1.7; }
+
+    /* Camera and preview */
+    #camera-card, #preview-card { display: none; padding: 10px; }
+    .frame {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+    }
+    #video, #preview {
+      display: block;
+      width: 100%;
+      max-height: 360px;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+    #camera-card .actions { margin-top: 12px; padding: 0 8px 8px; }
+    .preview-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 4px 2px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--brand);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 8px;
+    }
+
+    /* Loading */
+    .loading {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      padding: 14px 18px;
+    }
+    .spinner {
+      width: 26px;
+      height: 26px;
+      border: 3px solid var(--brand-soft);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Result */
+    #result-card { display: none; animation: rise 0.35s ease both; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+    .badge.healthy { background: var(--ok-soft); color: var(--ok); }
+    .badge.disease { background: var(--warn-soft); color: var(--warn); }
+    .badge.unsure  { background: var(--danger-soft); color: var(--danger); }
+
+    .result-name {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.25;
+      color: var(--text);
+    }
+
+    .conf-head {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .conf-head strong { color: var(--text); }
+    .bar {
+      height: 10px;
+      background: var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #81c784, var(--brand));
+      transition: width 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .bar-fill.low { background: linear-gradient(90deg, #ffb74d, #f57c00); }
+
+    .alt { margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+    .callout {
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-top: 14px;
+    }
+    .callout.warn { background: var(--warn-soft); color: var(--warn); }
+    .callout.error { background: var(--danger-soft); color: var(--danger); }
+
+    /* Expandable sections */
+    .sections { margin-top: 16px; border-top: 1px solid var(--line); }
+    details.section { border-bottom: 1px solid var(--line); }
+    details.section summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 2px;
+      font-weight: 650;
+      color: var(--text);
+    }
+    details.section summary::-webkit-details-marker { display: none; }
+    details.section summary::after {
+      content: "+";
+      color: var(--brand);
+      font-size: 20px;
+      line-height: 1;
+    }
+    details.section[open] summary::after { content: "–"; }
+    details.section p {
+      margin: 0 2px 14px;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .retry {
+      width: 100%;
+      margin-top: 16px;
+      min-height: 48px;
+      border-radius: 14px;
+      border: 1px solid var(--brand);
+      background: transparent;
+      color: var(--brand);
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .retry:hover { background: var(--brand-soft); }
+
+    .notice {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+      margin-top: 22px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="brand" aria-hidden="true">🌿</div>
+      <h1>CassavaCare AI</h1>
+      <p class="tagline">Check your cassava leaf for common diseases</p>
+      <div class="chips" aria-label="Conditions this app can recognise">
+        <span class="chip">Brown Streak</span>
+        <span class="chip">Mosaic</span>
+        <span class="chip">Healthy</span>
+      </div>
+    </header>
+
+    <section class="card" aria-live="polite">
+      <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Loading the AI model...</span>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="btnCamera" type="button" disabled>
+          <span class="icon" aria-hidden="true">📷</span>
+          Take photo
+          <small>Use your camera</small>
+        </button>
+        <button class="btn" id="btnGallery" type="button" disabled>
+          <span class="icon" aria-hidden="true">🖼️</span>
+          Choose photo
+          <small>From your gallery</small>
+        </button>
+      </div>
+
+      <input class="visually-hidden" type="file" id="cameraInput" accept="image/*" capture="environment">
+      <input class="visually-hidden" type="file" id="galleryInput" accept="image/*">
+
+      <details class="tips">
+        <summary>Tips for a good photo</summary>
+        <ul>
+          <li>Photograph one plant at a time, in daylight.</li>
+          <li>Fill most of the photo with leaves.</li>
+          <li>Hold the phone steady and keep it sharp.</li>
+          <li>Avoid strong shadows.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="card" id="camera-card">
+      <div class="frame">
+        <video id="video" autoplay playsinline muted></video>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="btnShot" type="button">
+          <span class="icon" aria-hidden="true">⭕</span>
+          Capture
+        </button>
+        <button class="btn" id="btnCancel" type="button">
+          <span class="icon" aria-hidden="true">✖️</span>
+          Cancel
+        </button>
+      </div>
+    </section>
+
+    <section class="card" id="preview-card">
+      <div class="frame">
+        <img id="preview" alt="The leaf photo you selected">
+      </div>
+      <div class="preview-bar">
+        <span>Your photo</span>
+        <button class="link-btn" id="btnClear" type="button">Remove</button>
+      </div>
+    </section>
+
+    <div class="loading card" id="loading" role="status">
+      <div class="spinner" aria-hidden="true"></div>
+      <span>Analysing your leaf...</span>
+    </div>
+
+    <section class="card" id="result-card" aria-live="polite">
+      <div id="result"></div>
+    </section>
+
+    <p class="notice">
+      AI results are not a confirmed diagnosis. If you are unsure, show the leaf to an extension officer.
+      This app does not yet detect Bacterial Blight or Green Mottle.
+    </p>
+  </main>
+
+  <script>
+    const MODEL_URL = "model.json";
+    const METADATA_URL = "metadata.json";
+    const DISEASE_URL = "disease_info.json";
+
+    // Below this confidence, the app will not present the result as a firm answer.
+    const CONFIDENCE_THRESHOLD = 0.75;
+
+    // Lower values mean blurrier. Adjust after testing on real photos.
+    const BLUR_THRESHOLD = 60;
+
+    // Maps the class names typed in Teachable Machine to the keys in disease_info.json
+    const keyFor = {
+      "Cassava Bacterial Blight": "CBB",
+      "Cassava Brown Streak Disease": "CBSD",
+      "Cassava Green Mottle": "CGM",
+      "Cassava Mosaic Disease": "CMD",
+      "Healthy Cassava Leaf": "Healthy"
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const ui = {
+      dot: $("statusDot"),
+      statusText: $("statusText"),
+      btnCamera: $("btnCamera"),
+      btnGallery: $("btnGallery"),
+      cameraInput: $("cameraInput"),
+      galleryInput: $("galleryInput"),
+      cameraCard: $("camera-card"),
+      video: $("video"),
+      btnShot: $("btnShot"),
+      btnCancel: $("btnCancel"),
+      previewCard: $("preview-card"),
+      preview: $("preview"),
+      btnClear: $("btnClear"),
+      loading: $("loading"),
+      resultCard: $("result-card"),
+      result: $("result")
+    };
+
+    let model = null;
+    let info = null;
+    let currentUrl = null;
+    let stream = null;
+
+    function setStatus(text, state) {
+      ui.statusText.textContent = text;
+      ui.dot.className = "dot " + (state || "");
+    }
+
+    function setBusy(busy) {
+      ui.btnCamera.disabled = busy;
+      ui.btnGallery.disabled = busy;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+
+    async function start() {
+      try {
+        model = await tmImage.load(MODEL_URL, METADATA_URL);
+        const res = await fetch(DISEASE_URL);
+        if (!res.ok) throw new Error("disease_info.json not found");
+        info = await res.json();
+        setStatus("Ready. Take or choose a leaf photo.", "ready");
+        setBusy(false);
+      } catch (err) {
+        console.error(err);
+        setStatus("The app could not start. Check that all files are in the same folder and the server is running.", "error");
+      }
+    }
+
+    function showError(message) {
+      ui.resultCard.style.display = "block";
+      ui.result.innerHTML = `
+        <div class="callout error">
+          <strong>${escapeHtml(message)}</strong>
+        </div>
+        <button class="retry" id="btnRetry" type="button">Try again</button>
+      `;
+      $("btnRetry").addEventListener("click", resetScan);
+    }
+
+    function resetScan() {
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      currentUrl = null;
+      ui.preview.removeAttribute("src");
+      ui.previewCard.style.display = "none";
+      ui.resultCard.style.display = "none";
+      ui.result.innerHTML = "";
+      ui.cameraInput.value = "";
+      ui.galleryInput.value = "";
+      ui.btnCamera.focus();
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        ui.preview.onload = () => {
+          if (!ui.preview.naturalWidth || !ui.preview.naturalHeight) {
+            reject(new Error("empty"));
+          } else {
+            resolve();
+          }
+        };
+        ui.preview.onerror = () => reject(new Error("unreadable"));
+        ui.preview.src = src;
+      });
+    }
+
+    function renderResult(predictions, best, d) {
+      const percent = Math.round(best.probability * 100);
+      const isHealthy = keyFor[best.className] === "Healthy";
+      const lowConfidence = best.probability < CONFIDENCE_THRESHOLD;
+
+      let badgeClass = isHealthy ? "healthy" : "disease";
+      let badgeText = isHealthy ? "Healthy leaf" : "Disease detected";
+      if (lowConfidence) {
+        badgeClass = "unsure";
+        badgeText = "Not certain";
+      }
+
+      const runnerUp = [...predictions].sort((a, b) => b.probability - a.probability)[1];
+      const runnerUpKey = runnerUp && keyFor[runnerUp.className];
+      const runnerUpName = runnerUpKey && info[runnerUpKey] ? info[runnerUpKey].name : null;
+      const runnerUpPercent = runnerUp ? Math.round(runnerUp.probability * 100) : 0;
+
+      const lowNotice = lowConfidence
+        ? `<div class="callout warn"><strong>The model is not confident about this photo.</strong> Try a clearer, closer photo in daylight, or ask an extension officer to check the plant.</div>`
+        : "";
+
+      const alt = (runnerUpName && runnerUpPercent >= 10)
+        ? `<p class="alt">Also possible: ${escapeHtml(runnerUpName)} (${runnerUpPercent}%)</p>`
+        : "";
+
+      ui.result.innerHTML = `
+        <span class="badge ${badgeClass}">${badgeText}</span>
+        <h2 class="result-name">${escapeHtml(d.name)}</h2>
+
+        <div class="conf-head">
+          <span>Model confidence</span>
+          <strong>${percent}%</strong>
+        </div>
+        <div class="bar" role="img" aria-label="Confidence ${percent} percent">
+          <div class="bar-fill ${lowConfidence ? "low" : ""}" id="confFill"></div>
+        </div>
+
+        ${alt}
+        ${lowNotice}
+
+        <div class="sections">
+          <details class="section" open>
+            <summary>What it is</summary>
+            <p>${escapeHtml(d.cause)}</p>
+          </details>
+          <details class="section">
+            <summary>Symptoms</summary>
+            <p>${escapeHtml(d.symptoms)}</p>
+          </details>
+          <details class="section">
+            <summary>How it spreads</summary>
+            <p>${escapeHtml(d.spread)}</p>
+          </details>
+          <details class="section">
+            <summary>What to do now</summary>
+            <p>${escapeHtml(d.management)}</p>
+          </details>
+          <details class="section">
+            <summary>Prevention</summary>
+            <p>${escapeHtml(d.prevention)}</p>
+          </details>
+          <details class="section">
+            <summary>When to get help</summary>
+            <p>${escapeHtml(d.see_extension_officer)}</p>
+          </details>
+        </div>
+
+        <p class="alt">AI prediction, not a confirmed diagnosis. If unsure, show the leaf to an extension officer.</p>
+        <button class="retry" id="btnRetry" type="button">Scan another leaf</button>
+      `;
+
+      ui.resultCard.style.display = "block";
+      $("btnRetry").addEventListener("click", resetScan);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          $("confFill").style.width = percent + "%";
+        });
+      });
+    }
+
+    // Image quality checks
+
+    function isBlankFrame(canvas) {
+      const ctx = canvas.getContext("2d");
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let sum = 0;
+      let sumSq = 0;
+      let n = 0;
+      // Sample every 10th pixel to keep this fast on phones
+      for (let i = 0; i < data.length; i += 40) {
+        const v = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        sum += v;
+        sumSq += v * v;
+        n++;
+      }
+      const mean = sum / n;
+      const variance = sumSq / n - mean * mean;
+      // Very dark or almost uniform frames are treated as blank
+      return mean < 8 || variance < 15;
+    }
+
+    function sharpnessScore(source) {
+      // Work on a small copy so it runs quickly on phones
+      const maxSide = 400;
+      const w0 = source.videoWidth || source.naturalWidth || source.width;
+      const h0 = source.videoHeight || source.naturalHeight || source.height;
+      const scale = Math.min(1, maxSide / Math.max(w0, h0));
+      const w = Math.max(1, Math.round(w0 * scale));
+      const h = Math.max(1, Math.round(h0 * scale));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(source, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+
+      // Convert to greyscale
+      const gray = new Float32Array(w * h);
+      for (let i = 0, p = 0; p < gray.length; i += 4, p++) {
+        gray[p] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      }
+
+      // Laplacian filter: strong edges give high values, blur gives low values
+      let sum = 0;
+      let sumSq = 0;
+      let count = 0;
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const p = y * w + x;
+          const lap = 4 * gray[p] - gray[p - 1] - gray[p + 1] - gray[p - w] - gray[p + w];
+          sum += lap;
+          sumSq += lap * lap;
+          count++;
+        }
+      }
+      if (count === 0) return 0;
+      const mean = sum / count;
+      return sumSq / count - mean * mean;
+    }
+
+    function isBlurry(source) {
+      return sharpnessScore(source) < BLUR_THRESHOLD;
+    }
+
+    // Live camera
+
+    async function openCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        // No live camera support in this browser: fall back to the system camera picker
+        ui.cameraInput.click();
+        return;
+      }
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false
+        });
+        ui.video.srcObject = stream;
+        ui.cameraCard.style.display = "block";
+        ui.previewCard.style.display = "none";
+        ui.resultCard.style.display = "none";
+      } catch (err) {
+        console.error(err);
+        showError("The camera could not open. Allow camera access in your browser, or choose a photo instead.");
+      }
+    }
+
+    function closeCamera() {
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+        stream = null;
+      }
+      ui.video.srcObject = null;
+      ui.cameraCard.style.display = "none";
+    }
+
+    function capturePhoto() {
+      if (ui.video.readyState < 2 || !ui.video.videoWidth) {
+        showError("The camera is not ready yet. Wait a second, then tap Capture again.");
+        return;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = ui.video.videoWidth;
+      canvas.height = ui.video.videoHeight;
+      canvas.getContext("2d").drawImage(ui.video, 0, 0);
+
+      if (isBlankFrame(canvas)) {
+        showError("Image looks blank. Check the lens and the lighting, then tap Capture again.");
+        return;
+      }
+
+      if (isBlurry(canvas)) {
+        // Camera stays open so the farmer can retake the photo straight away
+        showError("Image is blurry. Hold the phone steady, move closer to the leaf, and tap Capture again.");
+        return;
+      }
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          showError("No image was captured. Please tap Capture again.");
+          return;
+        }
+        closeCamera();
+        handleFile(new File([blob], "capture.jpg", { type: "image/jpeg" }));
+      }, "image/jpeg", 0.92);
+    }
+
+    // Main analysis
+
+    async function handleFile(file) {
+      if (!file) {
+        showError("No image found. Please take a photo or choose one from your gallery.");
+        return;
+      }
+
+      if (!file.type || !file.type.startsWith("image/")) {
+        showError("That file is not an image. Please choose a JPG or PNG photo.");
+        return;
+      }
+
+      if (!model || !info) {
+        showError("The AI model is still loading. Please wait a moment and try again.");
+        return;
+      }
+
+      if (currentUrl) URL.revokeObjectURL(currentUrl);
+      currentUrl = URL.createObjectURL(file);
+
+      try {
+        await loadImage(currentUrl);
+      } catch (err) {
+        URL.revokeObjectURL(currentUrl);
+        currentUrl = null;
+        showError("Image not found. The file could not be opened. Please try another photo.");
+        return;
+      }
+
+      if (isBlurry(ui.preview)) {
+        URL.revokeObjectURL(currentUrl);
+        currentUrl = null;
+        showError("Image is blurry. Please take a clear photo: hold the phone steady, move closer, and try again.");
+        return;
+      }
+
+      ui.previewCard.style.display = "block";
+      ui.resultCard.style.display = "none";
+      ui.loading.style.display = "flex";
+      setBusy(true);
+
+      try {
+        const predictions = await model.predict(ui.preview);
+        const best = predictions.reduce((a, b) => (b.probability > a.probability ? b : a));
+        const key = keyFor[best.className];
+        const d = key && info[key];
+
+        if (!d) {
+          showError("The app could not match this result to a disease. Please try another photo.");
+        } else {
+          renderResult(predictions, best, d);
+        }
+      } catch (err) {
+        console.error(err);
+        showError("Something went wrong while analysing this photo. Please try a different image.");
+      } finally {
+        ui.loading.style.display = "none";
+        setBusy(false);
+      }
+    }
+
+    // Events
+
+    ui.btnCamera.addEventListener("click", openCamera);
+    ui.btnGallery.addEventListener("click", () => ui.galleryInput.click());
+    ui.btnShot.addEventListener("click", capturePhoto);
+    ui.btnCancel.addEventListener("click", closeCamera);
+
+    ui.cameraInput.addEventListener("change", (e) => {
+      handleFile(e.target.files[0]);
+      e.target.value = "";
+    });
+    ui.galleryInput.addEventListener("change", (e) => {
+      handleFile(e.target.files[0]);
+      e.target.value = "";
+    });
+
+    ui.btnClear.addEventListener("click", resetScan);
+    window.addEventListener("pagehide", closeCamera);
+
+    start();
+  </script>
+</body>
+</html>
